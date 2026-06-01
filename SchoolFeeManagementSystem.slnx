@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="SchoolFeeManagementSystem/SchoolFeeManagementSystem.csproj" />
+  <Project Path="SchoolFeeManagemetSystem.API/SchoolFeeManagemetSystem.API.csproj" Id="7c4b6946-1c19-4d8f-8e78-aeac74117544" />
+  <Project Path="ScoolFeeManagementSystem.Data/ScoolFeeManagementSystem.Data.csproj" Id="836b6baa-143e-4717-bb99-de0fb0c809dc" />
+</Solution>

@@ -1,0 +1,91 @@
+﻿using static SchoolFeeManagemetSystem.API.DTOs.FeeCategoryDTOs;
+
+namespace SchoolFeeManagementSystem.Forms
+{
+    public partial class Fees : Form
+    {
+        private ApiClient api = new ApiClient();
+        private int selectedId = 0;
+        public Fees()
+        {
+            InitializeComponent();
+        }
+        private async Task LoadData()
+        {
+            var data = await api.GetAllAsync<FeeCategoryDTO>("feecategories");
+            dgvCategory.DataSource = data;
+            lblTotal.Text = "Total Categories: " + data.Count;
+        }
+
+        private async void FeeCategoryForm_Click(object sender, EventArgs e)
+        {
+
+            await LoadData();
+        }
+        private async void btnAdd_Click(object sender, EventArgs e)
+        {
+            var dto = new CreateFeeCategoryDTO
+            {
+                CategoryName = txtCategoryName.Text,
+                Frequency = cmbFrequency.Text,
+                Description = txtDescription.Text,
+                IsActive = cmbStatus.Text.Equals("Active", StringComparison.OrdinalIgnoreCase)
+            };
+
+            await api.PostAsync<FeeCategoryDTO>("feecategories", dto);
+            await LoadData();
+            Clear();
+        }
+
+        private async void btnEdit_Click(object sender, EventArgs e)
+        {
+            var dto = new UpdateFeeCategoryDTO
+            {
+                Id = selectedId,
+                CategoryName = txtCategoryName.Text,
+                Frequency = cmbFrequency.Text,
+                Description = txtDescription.Text,
+                IsActive = cmbStatus.Text.Equals("Active", StringComparison.OrdinalIgnoreCase)
+            };
+
+            await api.PutAsync("feecategories", dto);
+            await LoadData();
+        }
+
+        private async void btnDelete_Click(object sender, EventArgs e)
+        {
+            await api.DeleteAsync("feecategories", selectedId);
+            await LoadData();
+        }
+
+        private async void btnRefresh_Click(object sender, EventArgs e)
+        {
+            await LoadData();
+        }
+
+        private void tnAssignFee_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            var row = dgvCategory.Rows[e.RowIndex];
+            selectedId = Convert.ToInt32(row.Cells["Id"].Value);
+            txtCategoryName.Text = row.Cells["CategoryName"].Value.ToString();
+            cmbFrequency.Text = row.Cells["Frequency"].Value.ToString();
+            txtDescription.Text = row.Cells["Description"].Value.ToString();
+            cmbStatus.Text = row.Cells["Status"].Value.ToString();
+        }
+
+        private void Clear()
+        {
+            txtCategoryName.Clear();
+            txtDescription.Clear();
+            cmbFrequency.SelectedIndex = -1;
+            cmbStatus.SelectedIndex = -1;
+        }
+
+       
+    }
+}

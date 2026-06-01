@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "SchoolFeeManagementSystem\\SchoolFeeManagementSystem.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "SchoolFeeManagemetSystem.API\\SchoolFeeManagemetSystem.API.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

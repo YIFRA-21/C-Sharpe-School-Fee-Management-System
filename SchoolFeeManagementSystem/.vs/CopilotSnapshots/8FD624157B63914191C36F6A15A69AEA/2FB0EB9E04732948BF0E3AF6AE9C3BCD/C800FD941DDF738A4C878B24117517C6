@@ -1,0 +1,221 @@
+﻿using SchoolFeeManagementSystem;
+using SchoolFeeManagementSystem.Forms;
+using System;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace SchoolFeeManagementSystem
+{
+    public partial class PaymentManagement : Form
+    {
+        private readonly ApiClient _api = new ApiClient();
+
+        // 🔷 PAGINATION VARIABLES
+        private List<dynamic> allData = new List<dynamic>();
+        private int currentPage = 1;
+        private int pageSize = 10;
+        private int totalPages = 0;
+
+        public PaymentManagement()
+        {
+            InitializeComponent();
+            InitializeUI();
+        }
+
+        // 🔷 CREATE UI CONTROLS (NO DESIGNER NEEDED)
+        private DataGridView dgvPayments;
+        private Button btnAdd, btnUpdate, btnDelete, btnClear, btnPrint, btnNext, btnBack;
+        private Label lblTotal;
+
+        private void InitializeUI()
+        {
+            // DataGridView
+            dgvPayments = new DataGridView
+            {
+                Location = new System.Drawing.Point(20, 80),
+                Size = new System.Drawing.Size(950, 300),
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+            };
+            this.Controls.Add(dgvPayments);
+
+            // Buttons
+            btnAdd = new Button { Text = "Add", Location = new System.Drawing.Point(20, 30) };
+            btnUpdate = new Button { Text = "Update", Location = new System.Drawing.Point(100, 30) };
+            btnDelete = new Button { Text = "Delete", Location = new System.Drawing.Point(200, 30) };
+            btnClear = new Button { Text = "Clear", Location = new System.Drawing.Point(300, 30) };
+            btnPrint = new Button { Text = "Print Receipt", Location = new System.Drawing.Point(400, 30) };
+
+            btnBack = new Button { Text = "Back", Location = new System.Drawing.Point(750, 400) };
+            btnNext = new Button { Text = "Next", Location = new System.Drawing.Point(850, 400) };
+
+            lblTotal = new Label
+            {
+                Text = "Total Records: 0",
+                Location = new System.Drawing.Point(20, 400),
+                AutoSize = true
+            };
+
+            // Add controls
+            this.Controls.Add(btnAdd);
+            this.Controls.Add(btnUpdate);
+            this.Controls.Add(btnDelete);
+            this.Controls.Add(btnClear);
+            this.Controls.Add(btnPrint);
+            this.Controls.Add(btnBack);
+            this.Controls.Add(btnNext);
+            this.Controls.Add(lblTotal);
+
+            // Events
+            btnAdd.Click += btnAdd_Click;
+            btnUpdate.Click += btnUpdate_Click;
+            btnDelete.Click += btnDelete_Click;
+            btnClear.Click += btnClear_Click;
+            btnPrint.Click += btnPrint_Click;
+            btnNext.Click += btnNext_Click;
+            btnBack.Click += btnBack_Click;
+
+            this.Load += PaymentManagement_Load;
+        }
+
+        // 🔷 FORM LOAD
+        private async void PaymentManagement_Load(object sender, EventArgs e)
+        {
+            await LoadData();
+        }
+
+        // 🔷 LOAD ALL DATA FROM API
+        private async Task LoadData()
+        {
+            // Use the ApiClient.GetAllAsync<T> which returns Task<List<T>>
+            allData = await _api.GetAllAsync<dynamic>("Payment");
+
+            totalPages = (int)Math.Ceiling((double)allData.Count / pageSize);
+            currentPage = 1;
+
+            LoadPage();
+        }
+
+        // 🔷 LOAD CURRENT PAGE
+        private void LoadPage()
+        {
+            var pageData = allData
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            dgvPayments.DataSource = null;
+            dgvPayments.DataSource = pageData;
+
+            lblTotal.Text = $"Page {currentPage}/{totalPages} | Total: {allData.Count}";
+
+            // Enable / Disable buttons
+            btnNext.Enabled = currentPage < totalPages;
+            btnBack.Enabled = currentPage > 1;
+        }
+
+        // 🔷 ADD
+        private async void btnAdd_Click(object sender, EventArgs e)
+        {
+            var frm = new PaymentForm();
+
+            if (frm.ShowDialog() == DialogResult.OK)
+            {
+                await LoadData();
+            }
+        }
+
+        // 🔷 UPDATE (optional placeholder)
+        private void btnUpdate_Click(object sender, EventArgs e)
+        {
+            if (dgvPayments.CurrentRow == null)
+            {
+                MessageBox.Show("Select a record");
+                return;
+            }
+
+            MessageBox.Show("Update feature can be added here");
+        }
+
+        // 🔷 DELETE
+        private async void btnDelete_Click(object sender, EventArgs e)
+        {
+            if (dgvPayments.CurrentRow == null)
+            {
+                MessageBox.Show("Select a record");
+                return;
+            }
+
+            var id = dgvPayments.CurrentRow.Cells["id"].Value;
+
+            var confirm = MessageBox.Show("Delete this record?", "Confirm", MessageBoxButtons.YesNo);
+
+            if (confirm == DialogResult.Yes)
+            {
+                await _api.DeleteAsync($"Payment/{id}");
+                await LoadData();
+            }
+        }
+
+        // 🔷 CLEAR SELECTION
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            dgvPayments.ClearSelection();
+        }
+
+        // 🔷 PRINT RECEIPT
+        private void btnPrint_Click(object sender, EventArgs e)
+        {
+            if (dgvPayments.CurrentRow == null)
+            {
+                MessageBox.Show("Select a record");
+                return;
+            }
+
+            var row = dgvPayments.CurrentRow;
+
+            string receipt =
+                "===== PAYMENT RECEIPT =====\n\n" +
+                "Receipt No: " + row.Cells["receiptNo"].Value + "\n" +
+                "Student: " + row.Cells["student"].Value + "\n" +
+                "Class: " + row.Cells["className"].Value + "\n" +
+                "Total Fee: " + row.Cells["totalFee"].Value + "\n" +
+                "Paid: " + row.Cells["paidAmount"].Value + "\n" +
+                "Method: " + row.Cells["method"].Value;
+
+            MessageBox.Show(receipt);
+        }
+
+        // 🔷 NEXT PAGE
+        private void btnNext_Click(object sender, EventArgs e)
+        {
+            if (currentPage < totalPages)
+            {
+                currentPage++;
+                LoadPage();
+            }
+            else
+            {
+                dgvPayments.DataSource = null; // empty table
+            }
+        }
+
+        // 🔷 BACK PAGE
+        private void btnBack_Click(object sender, EventArgs e)
+        {
+            if (currentPage > 1)
+            {
+                currentPage--;
+                LoadPage();
+            }
+        }
+
+        private void dgvPayments_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        // Removed duplicate InitializeComponent implementation - use Designer generated one in PaymentManagement.Designer.cs
+    }
+}
+
+

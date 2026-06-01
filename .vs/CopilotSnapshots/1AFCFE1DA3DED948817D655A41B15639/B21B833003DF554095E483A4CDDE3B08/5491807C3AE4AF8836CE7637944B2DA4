@@ -1,0 +1,109 @@
+﻿
+using static SchoolFeeManagemetSystem.API.DTOs.FeeCategoryDTOs;
+namespace SchoolFeeManagementSystem.Forms
+{
+    public partial class Fees : Form
+    {
+        private ApiClient api = new ApiClient();
+        private int selectedId = 0;
+        public Fees()
+        {
+            InitializeComponent();
+        }
+        private async Task LoadData()
+        {
+            var data = await api.GetCategories();
+            dgvCategory.DataSource = data;
+            lblTotal.Text = "Total Categories: " + data.Count;
+        }
+
+        private async void FeeCategoryForm_Click(object sender, EventArgs e)
+        {
+            cmbFrequency.Items.AddRange(new[] { "Monthly", "Yearly", "One-Time" });
+            cmbStatus.Items.AddRange(new[] { "Active", "Inactive" });
+            await LoadData();
+        }
+        private async void btnAdd_Click(object sender, EventArgs e)
+        {
+            if (txtCategoryName.Text == "")
+            {
+                MessageBox.Show("Enter Category Name");
+                return;
+            }
+
+            var dto = new CreateFeeCategoryDTO
+            {
+                CategoryName = txtCategoryName.Text,
+                Frequency = cmbFrequency.Text,
+                Description = txtDescription.Text,
+                Status = cmbStatus.Text
+            };
+
+            await api.CreateCategory(dto);
+            await LoadData();
+            Clear();
+        }
+
+        private async void btnEdit_Click(object sender, EventArgs e)
+        {
+            if (selectedId == 0) return;
+
+            var dto = new UpdateFeeCategoryDTO
+            {
+                Id = selectedId,
+                CategoryName = txtCategoryName.Text,
+                Frequency = cmbFrequency.Text,
+                Description = txtDescription.Text,
+                Status = cmbStatus.Text
+            };
+
+            await api.UpdateCategory(dto);
+            await LoadData();
+        }
+
+        private async void btnDelete_Click(object sender, EventArgs e)
+        {
+            if (selectedId == 0) return;
+
+            await api.DeleteCategory(selectedId);
+            await LoadData();
+            Clear();
+        }
+
+        private async void btnRefresh_Click(object sender, EventArgs e)
+        {
+            await LoadData();
+        }
+
+        private void tnAssignFee_Click(object sender, EventArgs e)
+        {
+
+        }
+        
+        private void dgvCategory_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+
+            var row = dgvCategory.Rows[e.RowIndex];
+
+            selectedId = Convert.ToInt32(row.Cells["Id"].Value);
+            txtCategoryId.Text = selectedId.ToString();
+            txtCategoryName.Text = row.Cells["CategoryName"].Value.ToString();
+            cmbFrequency.Text = row.Cells["Frequency"].Value.ToString();
+            txtDescription.Text = row.Cells["Description"].Value.ToString();
+            cmbStatus.Text = row.Cells["Status"].Value.ToString();
+        }
+
+        private void Clear()
+        {
+            selectedId = 0;
+            txtCategoryId.Clear();
+            txtCategoryName.Clear();
+            txtDescription.Clear();
+            cmbFrequency.SelectedIndex = -1;
+            cmbStatus.SelectedIndex = -1;
+        }
+
+       
+    }
+}
